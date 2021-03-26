@@ -5,7 +5,11 @@ use wgpu::{
     RenderPassDescriptor, RequestAdapterOptions, Surface, SwapChain, SwapChainDescriptor,
     TextureUsage,
 };
-use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
+use winit::{
+    dpi::{PhysicalPosition, PhysicalSize},
+    event::{MouseScrollDelta, WindowEvent},
+    window::Window,
+};
 
 pub struct State {
     surface: Surface,
@@ -14,6 +18,17 @@ pub struct State {
     sc_desc: SwapChainDescriptor,
     swap_chain: SwapChain,
     pub size: PhysicalSize<u32>,
+    game_local: GameLocal,
+}
+
+struct GameLocal {
+    mouse_input: MouseInputs,
+    color: Color,
+}
+
+struct MouseInputs {
+    mouse_pointer_position: Option<PhysicalPosition<f64>>,
+    scroll: Option<MouseScrollDelta>,
 }
 
 impl State {
@@ -55,6 +70,18 @@ impl State {
             sc_desc,
             swap_chain,
             size,
+            game_local: GameLocal {
+                mouse_input: MouseInputs {
+                    mouse_pointer_position: None,
+                    scroll: None,
+                },
+                color: Color {
+                    r: 0.1,
+                    g: 0.2,
+                    b: 0.3,
+                    a: 1.0,
+                },
+            },
         }
     }
 
@@ -65,12 +92,25 @@ impl State {
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
     }
 
-    pub fn input(&mut self, _event: &WindowEvent) -> bool {
-        false
+    pub fn input(&mut self, event: &WindowEvent) -> bool {
+        match event {
+            WindowEvent::MouseWheel { delta, .. } => {
+                self.game_local.mouse_input.scroll = Some(*delta);
+                true
+            }
+            WindowEvent::CursorMoved { position, .. } => {
+                self.game_local.mouse_input.mouse_pointer_position = Some(*position);
+                true
+            }
+            _ => false,
+        }
     }
 
     pub fn update(&mut self) {
-        // doing nothing
+        if let Some(pos) = self.game_local.mouse_input.mouse_pointer_position {
+            self.game_local.color.r = pos.x / self.size.width as f64;
+            self.game_local.color.g = pos.y / self.size.height as f64;
+        }
     }
 
     pub fn render(&mut self) -> Result<()> {
@@ -87,12 +127,7 @@ impl State {
                     attachment: &frame.view,
                     resolve_target: None,
                     ops: Operations {
-                        load: wgpu::LoadOp::Clear(Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(self.game_local.color),
                         store: true,
                     },
                 }],
