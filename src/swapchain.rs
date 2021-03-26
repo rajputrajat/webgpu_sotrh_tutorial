@@ -1,7 +1,9 @@
 use anyhow::Result;
 use wgpu::{
-    BackendBit, Device, DeviceDescriptor, Features, Instance, Limits, PowerPreference, Queue,
-    RequestAdapterOptions, Surface, SwapChain, SwapChainDescriptor, SwapChainError, TextureUsage,
+    BackendBit, Color, CommandEncoderDescriptor, Device, DeviceDescriptor, Features, Instance,
+    Limits, Operations, PowerPreference, Queue, RenderPassColorAttachmentDescriptor,
+    RenderPassDescriptor, RequestAdapterOptions, Surface, SwapChain, SwapChainDescriptor,
+    TextureUsage,
 };
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 
@@ -11,7 +13,7 @@ pub struct State {
     queue: Queue,
     sc_desc: SwapChainDescriptor,
     swap_chain: SwapChain,
-    size: PhysicalSize<u32>,
+    pub size: PhysicalSize<u32>,
 }
 
 impl State {
@@ -62,15 +64,41 @@ impl State {
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
     }
 
-    fn input(&mut self, event: &WindowEvent) -> bool {
-        todo!();
+    pub fn input(&mut self, _event: &WindowEvent) -> bool {
+        false
     }
 
-    fn update(&mut self) {
-        todo!();
+    pub fn update(&mut self) {
+        // doing nothing
     }
 
-    fn render(&mut self) -> Result<SwapChainError> {
-        todo!();
+    pub fn render(&mut self) -> Result<()> {
+        let frame = self.swap_chain.get_current_frame()?.output;
+        let mut encoder = self
+            .device
+            .create_command_encoder(&CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
+        {
+            let _render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
+                label: Some("Render pass"),
+                color_attachments: &[RenderPassColorAttachmentDescriptor {
+                    attachment: &frame.view,
+                    resolve_target: None,
+                    ops: Operations {
+                        load: wgpu::LoadOp::Clear(Color {
+                            r: 0.1,
+                            g: 0.2,
+                            b: 0.3,
+                            a: 1.0,
+                        }),
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+            });
+        }
+        self.queue.submit(std::iter::once(encoder.finish()));
+        Ok(())
     }
 }
