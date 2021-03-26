@@ -28,6 +28,7 @@ impl State {
             })
             .await
             .unwrap();
+        println!("{:?}", adapter.get_info());
         let (device, queue) = adapter
             .request_device(
                 &DeviceDescriptor {
