@@ -1,13 +1,12 @@
 use anyhow::Result;
-use shaderc::ShaderKind;
 use wgpu::{
-    include_spirv, util::make_spirv, BackendBit, BlendState, Color, ColorTargetState, ColorWrite,
+    include_spirv, BackendBit, BlendState, Color, ColorTargetState, ColorWrite,
     CommandEncoderDescriptor, CullMode, Device, DeviceDescriptor, Features, FragmentState,
     FrontFace, Instance, Limits, MultisampleState, Operations, PipelineLayoutDescriptor,
     PolygonMode, PowerPreference, PrimitiveState, PrimitiveTopology, Queue,
     RenderPassColorAttachmentDescriptor, RenderPassDescriptor, RenderPipeline,
-    RenderPipelineDescriptor, RequestAdapterOptions, ShaderFlags, ShaderModuleDescriptor, Surface,
-    SwapChain, SwapChainDescriptor, TextureUsage, VertexState,
+    RenderPipelineDescriptor, RequestAdapterOptions, Surface, SwapChain, SwapChainDescriptor,
+    TextureUsage, VertexState,
 };
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},

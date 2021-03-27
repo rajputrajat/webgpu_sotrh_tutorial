@@ -1,0 +1,22 @@
+   Compiling webgpu_sotrh v0.1.0 (C:\Users\rajput\R\learn\rust\webgpu_sotrh)
+error: couldn't read src\shader.vert.spv: The system cannot find the file specified. (os error 2)
+  --> src\swapchain.rs:98:54
+   |
+98 |         let vs_module = device.create_shader_module(&include_spirv!("shader.vert.spv"));
+   |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: couldn't read src\shader.frag.spv: The system cannot find the file specified. (os error 2)
+  --> src\swapchain.rs:99:54
+   |
+99 |         let fs_module = device.create_shader_module(&include_spirv!("shader.frag.spv"));
+   |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: aborting due to 2 previous errors
+
+error: could not compile `webgpu_sotrh`
+
+To learn more, run the command again with --verbose.
