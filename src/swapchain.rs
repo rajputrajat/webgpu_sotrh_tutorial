@@ -22,6 +22,7 @@ pub struct State {
     swap_chain: SwapChain,
     pub size: PhysicalSize<u32>,
     render_pipeline: RenderPipeline,
+    challenge_render_pipeline: RenderPipeline,
     game_local: GameLocal,
 }
 
@@ -67,7 +68,8 @@ impl State {
             present_mode: wgpu::PresentMode::Fifo,
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
-        let render_pipeline = State::create_render_pipeline(&device, &sc_desc).unwrap();
+        let (render_pipeline, challenge_render_pipeline) =
+            State::create_render_pipeline(&device, &sc_desc).unwrap();
         Self {
             surface,
             device,
@@ -76,6 +78,7 @@ impl State {
             swap_chain,
             size,
             render_pipeline,
+            challenge_render_pipeline,
             game_local: GameLocal {
                 mouse_input: MouseInputs {
                     mouse_pointer_position: None,
@@ -94,48 +97,96 @@ impl State {
     fn create_render_pipeline(
         device: &Device,
         sc_desc: &SwapChainDescriptor,
-    ) -> Result<RenderPipeline> {
-        let vs_module = device.create_shader_module(&include_spirv!("shader.vert.spv"));
-        let fs_module = device.create_shader_module(&include_spirv!("shader.frag.spv"));
-        // create pipeline layout
-        let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
-            label: Some("render pipeline layout"),
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
-        });
-        // create render pipeline
-        Ok(device.create_render_pipeline(&RenderPipelineDescriptor {
-            label: Some("render pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex: VertexState {
-                module: &vs_module,
-                entry_point: "main",
-                buffers: &[],
-            },
-            fragment: Some(FragmentState {
-                module: &fs_module,
-                entry_point: "main",
-                targets: &[ColorTargetState {
-                    format: sc_desc.format,
-                    alpha_blend: BlendState::REPLACE,
-                    color_blend: BlendState::REPLACE,
-                    write_mask: ColorWrite::ALL,
-                }],
-            }),
-            primitive: PrimitiveState {
-                topology: PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: FrontFace::Ccw,
-                cull_mode: CullMode::Back,
-                polygon_mode: PolygonMode::Fill,
-            },
-            depth_stencil: None,
-            multisample: MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-        }))
+    ) -> Result<(RenderPipeline, RenderPipeline)> {
+        let render_pipeline;
+        {
+            let vs_module = device.create_shader_module(&include_spirv!("shader.vert.spv"));
+            let fs_module = device.create_shader_module(&include_spirv!("shader.frag.spv"));
+            // create pipeline layout
+            let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+                label: Some("render pipeline layout"),
+                bind_group_layouts: &[],
+                push_constant_ranges: &[],
+            });
+            // create render pipeline
+            render_pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
+                label: Some("render pipeline"),
+                layout: Some(&render_pipeline_layout),
+                vertex: VertexState {
+                    module: &vs_module,
+                    entry_point: "main",
+                    buffers: &[],
+                },
+                fragment: Some(FragmentState {
+                    module: &fs_module,
+                    entry_point: "main",
+                    targets: &[ColorTargetState {
+                        format: sc_desc.format,
+                        alpha_blend: BlendState::REPLACE,
+                        color_blend: BlendState::REPLACE,
+                        write_mask: ColorWrite::ALL,
+                    }],
+                }),
+                primitive: PrimitiveState {
+                    topology: PrimitiveTopology::TriangleList,
+                    strip_index_format: None,
+                    front_face: FrontFace::Ccw,
+                    cull_mode: CullMode::Back,
+                    polygon_mode: PolygonMode::Fill,
+                },
+                depth_stencil: None,
+                multisample: MultisampleState {
+                    count: 1,
+                    mask: !0,
+                    alpha_to_coverage_enabled: false,
+                },
+            });
+        }
+        let challenge_render_pipeline;
+        {
+            let vs_module = device.create_shader_module(&include_spirv!("challenge.vert.spv"));
+            let fs_module = device.create_shader_module(&include_spirv!("challenge.frag.spv"));
+            // create pipeline layout
+            let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+                label: Some("render pipeline layout"),
+                bind_group_layouts: &[],
+                push_constant_ranges: &[],
+            });
+            // create render pipeline
+            challenge_render_pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
+                label: Some("render pipeline"),
+                layout: Some(&render_pipeline_layout),
+                vertex: VertexState {
+                    module: &vs_module,
+                    entry_point: "main",
+                    buffers: &[],
+                },
+                fragment: Some(FragmentState {
+                    module: &fs_module,
+                    entry_point: "main",
+                    targets: &[ColorTargetState {
+                        format: sc_desc.format,
+                        alpha_blend: BlendState::REPLACE,
+                        color_blend: BlendState::REPLACE,
+                        write_mask: ColorWrite::ALL,
+                    }],
+                }),
+                primitive: PrimitiveState {
+                    topology: PrimitiveTopology::TriangleList,
+                    strip_index_format: None,
+                    front_face: FrontFace::Ccw,
+                    cull_mode: CullMode::Back,
+                    polygon_mode: PolygonMode::Fill,
+                },
+                depth_stencil: None,
+                multisample: MultisampleState {
+                    count: 1,
+                    mask: !0,
+                    alpha_to_coverage_enabled: false,
+                },
+            });
+        }
+        Ok((render_pipeline, challenge_render_pipeline))
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
