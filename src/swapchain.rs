@@ -1,7 +1,7 @@
 use anyhow::Result;
-use shaderc::{self, ShaderKind};
+use shaderc::ShaderKind;
 use wgpu::{
-    util::make_spirv, BackendBit, BlendState, Color, ColorTargetState, ColorWrite,
+    include_spirv, util::make_spirv, BackendBit, BlendState, Color, ColorTargetState, ColorWrite,
     CommandEncoderDescriptor, CullMode, Device, DeviceDescriptor, Features, FragmentState,
     FrontFace, Instance, Limits, MultisampleState, Operations, PipelineLayoutDescriptor,
     PolygonMode, PowerPreference, PrimitiveState, PrimitiveTopology, Queue,
@@ -96,41 +96,8 @@ impl State {
         device: &Device,
         sc_desc: &SwapChainDescriptor,
     ) -> Result<RenderPipeline> {
-        let mut compiler = shaderc::Compiler::new().unwrap();
-        let vs_module;
-        {
-            let vs_src = include_str!("shader.vert");
-            let vs_spirv = compiler.compile_into_spirv(
-                &vs_src,
-                ShaderKind::Vertex,
-                "shader.vert",
-                "main",
-                None,
-            )?;
-            let vs_data = make_spirv(vs_spirv.as_binary_u8());
-            vs_module = device.create_shader_module(&ShaderModuleDescriptor {
-                label: Some("vertex shader"),
-                source: vs_data,
-                flags: ShaderFlags::default(),
-            });
-        }
-        let fs_module;
-        {
-            let fs_src = include_str!("shader.frag");
-            let fs_spirv = compiler.compile_into_spirv(
-                fs_src,
-                ShaderKind::Fragment,
-                "shader.frag",
-                "main",
-                None,
-            )?;
-            let fs_data = make_spirv(fs_spirv.as_binary_u8());
-            fs_module = device.create_shader_module(&ShaderModuleDescriptor {
-                label: Some("fragment shader"),
-                source: fs_data,
-                flags: ShaderFlags::default(),
-            });
-        }
+        let vs_module = device.create_shader_module(&include_spirv!("shader.vert.spv"));
+        let fs_module = device.create_shader_module(&include_spirv!("shader.frag.spv"));
         // create pipeline layout
         let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: Some("render pipeline layout"),
