@@ -1,9 +1,13 @@
 use anyhow::Result;
+use shaderc::{self, ShaderKind};
 use wgpu::{
-    BackendBit, Color, CommandEncoderDescriptor, Device, DeviceDescriptor, Features, Instance,
-    Limits, Operations, PowerPreference, Queue, RenderPassColorAttachmentDescriptor,
-    RenderPassDescriptor, RequestAdapterOptions, Surface, SwapChain, SwapChainDescriptor,
-    TextureUsage,
+    util::make_spirv, BackendBit, BlendState, Color, ColorTargetState, ColorWrite,
+    CommandEncoderDescriptor, CullMode, Device, DeviceDescriptor, Features, FragmentState,
+    FrontFace, Instance, Limits, MultisampleState, Operations, PipelineLayoutDescriptor,
+    PolygonMode, PowerPreference, PrimitiveState, PrimitiveTopology, Queue,
+    RenderPassColorAttachmentDescriptor, RenderPassDescriptor, RenderPipeline,
+    RenderPipelineDescriptor, RequestAdapterOptions, ShaderFlags, ShaderModuleDescriptor, Surface,
+    SwapChain, SwapChainDescriptor, TextureUsage, VertexState,
 };
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
@@ -18,6 +22,7 @@ pub struct State {
     sc_desc: SwapChainDescriptor,
     swap_chain: SwapChain,
     pub size: PhysicalSize<u32>,
+    render_pipeline: RenderPipeline,
     game_local: GameLocal,
 }
 
@@ -63,6 +68,7 @@ impl State {
             present_mode: wgpu::PresentMode::Fifo,
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
+        let render_pipeline = State::create_render_pipeline(&device, &sc_desc).unwrap();
         Self {
             surface,
             device,
@@ -70,6 +76,7 @@ impl State {
             sc_desc,
             swap_chain,
             size,
+            render_pipeline,
             game_local: GameLocal {
                 mouse_input: MouseInputs {
                     mouse_pointer_position: None,
@@ -83,6 +90,86 @@ impl State {
                 },
             },
         }
+    }
+
+    fn create_render_pipeline(
+        device: &Device,
+        sc_desc: &SwapChainDescriptor,
+    ) -> Result<RenderPipeline> {
+        let mut compiler = shaderc::Compiler::new().unwrap();
+        let vs_module;
+        {
+            let vs_src = include_str!("shader.vert");
+            let vs_spirv = compiler.compile_into_spirv(
+                &vs_src,
+                ShaderKind::Vertex,
+                "shader.vert",
+                "main",
+                None,
+            )?;
+            let vs_data = make_spirv(vs_spirv.as_binary_u8());
+            vs_module = device.create_shader_module(&ShaderModuleDescriptor {
+                label: Some("vertex shader"),
+                source: vs_data,
+                flags: ShaderFlags::default(),
+            });
+        }
+        let fs_module;
+        {
+            let fs_src = include_str!("shader.frag");
+            let fs_spirv = compiler.compile_into_spirv(
+                fs_src,
+                ShaderKind::Fragment,
+                "shader.frag",
+                "main",
+                None,
+            )?;
+            let fs_data = make_spirv(fs_spirv.as_binary_u8());
+            fs_module = device.create_shader_module(&ShaderModuleDescriptor {
+                label: Some("fragment shader"),
+                source: fs_data,
+                flags: ShaderFlags::default(),
+            });
+        }
+        // create pipeline layout
+        let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+            label: Some("render pipeline layout"),
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+        // create render pipeline
+        Ok(device.create_render_pipeline(&RenderPipelineDescriptor {
+            label: Some("render pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: VertexState {
+                module: &vs_module,
+                entry_point: "main",
+                buffers: &[],
+            },
+            fragment: Some(FragmentState {
+                module: &fs_module,
+                entry_point: "main",
+                targets: &[ColorTargetState {
+                    format: sc_desc.format,
+                    alpha_blend: BlendState::REPLACE,
+                    color_blend: BlendState::REPLACE,
+                    write_mask: ColorWrite::ALL,
+                }],
+            }),
+            primitive: PrimitiveState {
+                topology: PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: FrontFace::Ccw,
+                cull_mode: CullMode::Back,
+                polygon_mode: PolygonMode::Fill,
+            },
+            depth_stencil: None,
+            multisample: MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+        }))
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -121,7 +208,7 @@ impl State {
                 label: Some("Render Encoder"),
             });
         {
-            let _render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
+            let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: Some("Render pass"),
                 color_attachments: &[RenderPassColorAttachmentDescriptor {
                     attachment: &frame.view,
@@ -133,6 +220,8 @@ impl State {
                 }],
                 depth_stencil_attachment: None,
             });
+            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.draw(0..3, 0..1);
         }
         self.queue.submit(std::iter::once(encoder.finish()));
         Ok(())
