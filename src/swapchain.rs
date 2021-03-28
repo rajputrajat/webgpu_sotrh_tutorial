@@ -208,17 +208,18 @@ impl State {
                 self.game_local.mouse_input.mouse_pointer_position = Some(*position);
                 true
             }
-            WindowEvent::KeyboardInput { input, .. } => match input {
-                KeyboardInput {
-                    virtual_keycode: Some(VirtualKeyCode::Space),
-                    state: ElementState::Released,
-                    ..
-                } => {
-                    self.use_challenge ^= true;
-                    true
-                }
-                _ => false,
-            },
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        virtual_keycode: Some(VirtualKeyCode::Space),
+                        state: ElementState::Released,
+                        ..
+                    },
+                ..
+            } => {
+                self.use_challenge ^= true;
+                true
+            }
             _ => false,
         }
     }
