@@ -16,6 +16,7 @@ log = "0.4"
 wgpu = "0.7"
 futures = "0.3"
 anyhow = "1.0"
+bytemuck = { version = "1.5", features = [ "derive" ] }
 
 [build-dependencies]
 anyhow = "1.0"

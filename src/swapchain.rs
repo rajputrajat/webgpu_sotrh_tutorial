@@ -1,6 +1,10 @@
+use crate::buffers;
 use anyhow::Result;
+use bytemuck;
 use wgpu::{
-    include_spirv, BackendBit, BlendState, Color, ColorTargetState, ColorWrite,
+    include_spirv,
+    util::{BufferInitDescriptor, DeviceExt},
+    BackendBit, BlendState, Buffer, BufferUsage, Color, ColorTargetState, ColorWrite,
     CommandEncoderDescriptor, CullMode, Device, DeviceDescriptor, Features, FragmentState,
     FrontFace, Instance, Limits, MultisampleState, Operations, PipelineLayoutDescriptor,
     PolygonMode, PowerPreference, PrimitiveState, PrimitiveTopology, Queue,
@@ -23,6 +27,7 @@ pub struct State {
     pub size: PhysicalSize<u32>,
     render_pipeline: RenderPipeline,
     challenge_render_pipeline: RenderPipeline,
+    vertex_buffer: Buffer,
     use_challenge: bool,
     game_local: GameLocal,
 }
@@ -71,6 +76,11 @@ impl State {
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
         let (render_pipeline, challenge_render_pipeline) =
             State::create_render_pipeline(&device, &sc_desc);
+        let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("vertex buffer"),
+            contents: bytemuck::cast_slice(buffers::VERTICES),
+            usage: BufferUsage::VERTEX,
+        });
         Self {
             surface,
             device,
@@ -80,6 +90,7 @@ impl State {
             size,
             render_pipeline,
             challenge_render_pipeline,
+            vertex_buffer,
             use_challenge: false,
             game_local: GameLocal {
                 mouse_input: MouseInputs {

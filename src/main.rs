@@ -7,6 +7,7 @@ use winit::{
     window::WindowBuilder,
 };
 
+mod buffers;
 mod swapchain;
 
 fn main() {
