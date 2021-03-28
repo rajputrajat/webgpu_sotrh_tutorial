@@ -212,7 +212,7 @@ impl State {
                 input:
                     KeyboardInput {
                         virtual_keycode: Some(VirtualKeyCode::Space),
-                        state: ElementState::Released,
+                        state: ElementState::Pressed,
                         ..
                     },
                 ..
