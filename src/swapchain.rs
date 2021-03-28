@@ -1,5 +1,6 @@
 use crate::buffers;
 use anyhow::Result;
+use buffers::{Vertex, VERTICES};
 use bytemuck;
 use wgpu::{
     include_spirv,
@@ -28,6 +29,7 @@ pub struct State {
     render_pipeline: RenderPipeline,
     challenge_render_pipeline: RenderPipeline,
     vertex_buffer: Buffer,
+    num_vertices: u32,
     use_challenge: bool,
     game_local: GameLocal,
 }
@@ -47,6 +49,7 @@ impl State {
         let size = window.inner_size();
         let instance = Instance::new(BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
+        let num_vertices = VERTICES.len() as u32;
         let adapter = instance
             .request_adapter(&RequestAdapterOptions {
                 power_preference: PowerPreference::default(),
@@ -91,6 +94,7 @@ impl State {
             render_pipeline,
             challenge_render_pipeline,
             vertex_buffer,
+            num_vertices,
             use_challenge: false,
             game_local: GameLocal {
                 mouse_input: MouseInputs {
@@ -128,7 +132,7 @@ impl State {
                 vertex: VertexState {
                     module: &vs_module,
                     entry_point: "main",
-                    buffers: &[],
+                    buffers: &[Vertex::desc()],
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
@@ -172,7 +176,7 @@ impl State {
                 vertex: VertexState {
                     module: &vs_module,
                     entry_point: "main",
-                    buffers: &[],
+                    buffers: &[Vertex::desc()],
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
@@ -267,7 +271,8 @@ impl State {
             } else {
                 render_pass.set_pipeline(&self.render_pipeline);
             }
-            render_pass.draw(0..3, 0..1);
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.draw(0..self.num_vertices, 0..1);
         }
         self.queue.submit(std::iter::once(encoder.finish()));
         Ok(())

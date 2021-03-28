@@ -9,7 +9,7 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    fn desc<'a>() -> VertexBufferLayout<'a> {
+    pub fn desc<'a>() -> VertexBufferLayout<'a> {
         VertexBufferLayout {
             array_stride: std::mem::size_of::<Vertex>() as BufferAddress,
             step_mode: InputStepMode::Vertex,
