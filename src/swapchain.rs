@@ -10,7 +10,7 @@ use wgpu::{
 };
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
-    event::{MouseScrollDelta, WindowEvent},
+    event::{MouseScrollDelta, VirtualKeyCode, WindowEvent},
     window::Window,
 };
 
@@ -23,6 +23,7 @@ pub struct State {
     pub size: PhysicalSize<u32>,
     render_pipeline: RenderPipeline,
     challenge_render_pipeline: RenderPipeline,
+    use_challenge: bool,
     game_local: GameLocal,
 }
 
@@ -79,6 +80,7 @@ impl State {
             size,
             render_pipeline,
             challenge_render_pipeline,
+            use_challenge: false,
             game_local: GameLocal {
                 mouse_input: MouseInputs {
                     mouse_pointer_position: None,
@@ -206,6 +208,13 @@ impl State {
                 self.game_local.mouse_input.mouse_pointer_position = Some(*position);
                 true
             }
+            WindowEvent::KeyboardInput { input, .. } => match input.virtual_keycode {
+                Some(key_code) if key_code == VirtualKeyCode::Space => {
+                    self.use_challenge ^= true;
+                    true
+                }
+                _ => false,
+            },
             _ => false,
         }
     }
@@ -237,7 +246,11 @@ impl State {
                 }],
                 depth_stencil_attachment: None,
             });
-            render_pass.set_pipeline(&self.render_pipeline);
+            if self.use_challenge {
+                render_pass.set_pipeline(&self.challenge_render_pipeline);
+            } else {
+                render_pass.set_pipeline(&self.render_pipeline);
+            }
             render_pass.draw(0..3, 0..1);
         }
         self.queue.submit(std::iter::once(encoder.finish()));
