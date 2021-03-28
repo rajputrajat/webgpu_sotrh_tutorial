@@ -1,0 +1,90 @@
+   Compiling webgpu_sotrh v0.1.0 (C:\Users\rajput\R\learn\rust\webgpu_sotrh)
+warning: this import is redundant
+ --> src\main.rs:1:1
+  |
+1 | use env_logger;
+  | ^^^^^^^^^^^^^^^ help: remove it entirely
+  |
+  = note: `#[warn(clippy::single_component_path_imports)]` on by default
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_component_path_imports
+
+warning: Unnecessary nested match
+   --> src\swapchain.rs:211:57
+    |
+211 |               WindowEvent::KeyboardInput { input, .. } => match input {
+    |  _________________________________________________________^
+212 | |                 KeyboardInput {
+213 | |                     virtual_keycode: Some(VirtualKeyCode::Space),
+214 | |                     state: ElementState::Released,
+...   |
+220 | |                 _ => false,
+221 | |             },
+    | |_____________^
+    |
+    = note: `#[warn(clippy::collapsible_match)]` on by default
+help: The outer pattern can be modified to include the inner pattern.
+   --> src\swapchain.rs:211:42
+    |
+211 |               WindowEvent::KeyboardInput { input, .. } => match input {
+    |                                            ^^^^^ Replace this binding
+212 | /                 KeyboardInput {
+213 | |                     virtual_keycode: Some(VirtualKeyCode::Space),
+214 | |                     state: ElementState::Released,
+215 | |                     ..
+216 | |                 } => {
+    | |_________________^ with this pattern
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#collapsible_match
+
+warning: Unnecessary nested match
+  --> src\main.rs:26:65
+   |
+26 |                       WindowEvent::KeyboardInput { input, .. } => match input {
+   |  _________________________________________________________________^
+27 | |                         KeyboardInput {
+28 | |                             state: ElementState::Pressed,
+29 | |                             virtual_keycode: Some(VirtualKeyCode::Escape),
+...  |
+32 | |                         _ => {}
+33 | |                     },
+   | |_____________________^
+   |
+help: The outer pattern can be modified to include the inner pattern.
+  --> src\main.rs:26:50
+   |
+26 |                       WindowEvent::KeyboardInput { input, .. } => match input {
+   |                                                    ^^^^^ Replace this binding
+27 | /                         KeyboardInput {
+28 | |                             state: ElementState::Pressed,
+29 | |                             virtual_keycode: Some(VirtualKeyCode::Escape),
+30 | |                             ..
+31 | |                         } => *control_flow = ControlFlow::Exit,
+   | |_________________________^ with this pattern
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#collapsible_match
+
+warning: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
+  --> src\main.rs:26:65
+   |
+26 |                       WindowEvent::KeyboardInput { input, .. } => match input {
+   |  _________________________________________________________________^
+27 | |                         KeyboardInput {
+28 | |                             state: ElementState::Pressed,
+29 | |                             virtual_keycode: Some(VirtualKeyCode::Escape),
+...  |
+32 | |                         _ => {}
+33 | |                     },
+   | |_____________________^
+   |
+   = note: `#[warn(clippy::single_match)]` on by default
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match
+help: try this
+   |
+26 |                     WindowEvent::KeyboardInput { input, .. } => if let KeyboardInput {
+27 |                             state: ElementState::Pressed,
+28 |                             virtual_keycode: Some(VirtualKeyCode::Escape),
+29 |                             ..
+30 |                         } = input { *control_flow = ControlFlow::Exit },
+   |
+
+warning: 4 warnings emitted
+
+    Finished dev [unoptimized + debuginfo] target(s) in 0.99s

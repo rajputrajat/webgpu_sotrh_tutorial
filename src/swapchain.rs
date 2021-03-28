@@ -10,7 +10,7 @@ use wgpu::{
 };
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
-    event::{MouseScrollDelta, VirtualKeyCode, WindowEvent},
+    event::{ElementState, KeyboardInput, MouseScrollDelta, VirtualKeyCode, WindowEvent},
     window::Window,
 };
 
@@ -70,7 +70,7 @@ impl State {
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
         let (render_pipeline, challenge_render_pipeline) =
-            State::create_render_pipeline(&device, &sc_desc).unwrap();
+            State::create_render_pipeline(&device, &sc_desc);
         Self {
             surface,
             device,
@@ -99,7 +99,7 @@ impl State {
     fn create_render_pipeline(
         device: &Device,
         sc_desc: &SwapChainDescriptor,
-    ) -> Result<(RenderPipeline, RenderPipeline)> {
+    ) -> (RenderPipeline, RenderPipeline) {
         let render_pipeline;
         {
             let vs_module = device.create_shader_module(&include_spirv!("shader.vert.spv"));
@@ -188,7 +188,7 @@ impl State {
                 },
             });
         }
-        Ok((render_pipeline, challenge_render_pipeline))
+        (render_pipeline, challenge_render_pipeline)
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -208,8 +208,12 @@ impl State {
                 self.game_local.mouse_input.mouse_pointer_position = Some(*position);
                 true
             }
-            WindowEvent::KeyboardInput { input, .. } => match input.virtual_keycode {
-                Some(key_code) if key_code == VirtualKeyCode::Space => {
+            WindowEvent::KeyboardInput { input, .. } => match input {
+                KeyboardInput {
+                    virtual_keycode: Some(VirtualKeyCode::Space),
+                    state: ElementState::Released,
+                    ..
+                } => {
                     self.use_challenge ^= true;
                     true
                 }
