@@ -2,6 +2,7 @@ use crate::buffers;
 use anyhow::Result;
 use buffers::{Vertex, VERTICES};
 use bytemuck;
+use log::info;
 use wgpu::{
     include_spirv,
     util::{BufferInitDescriptor, DeviceExt},
@@ -57,7 +58,7 @@ impl State {
             })
             .await
             .unwrap();
-        println!("{:?}", adapter.get_info());
+        info!("{:?}", adapter.get_info());
         let (device, queue) = adapter
             .request_device(
                 &DeviceDescriptor {

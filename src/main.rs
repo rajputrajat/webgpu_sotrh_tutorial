@@ -1,5 +1,5 @@
-// use env_logger;
 use futures::executor::block_on;
+use simplelog::{Config, LevelFilter, SimpleLogger};
 use wgpu::{self, SwapChainError};
 use winit::{
     event::*,
@@ -11,7 +11,7 @@ mod buffers;
 mod swapchain;
 
 fn main() {
-    // env_logger::init();
+    let _ = SimpleLogger::init(LevelFilter::Debug, Config::default());
     let e_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&e_loop).unwrap();
     let mut state = block_on(swapchain::State::new(&window));
