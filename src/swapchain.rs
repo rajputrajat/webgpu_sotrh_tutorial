@@ -120,11 +120,11 @@ impl State {
             render: Renders {
                 renders: vec![
                     SpecificRender {
-                        render_pipeline,
+                        render_pipeline: challenge_render_pipeline,
                         buffer_related: None,
                     },
                     SpecificRender {
-                        render_pipeline: challenge_render_pipeline,
+                        render_pipeline,
                         buffer_related: Some(BufferRelatedData {
                             vertex_buffer,
                             index_buffer,
@@ -170,7 +170,7 @@ impl State {
                 vertex: VertexState {
                     module: &vs_module,
                     entry_point: "main",
-                    buffers: &[Vertex::desc()],
+                    buffers: &[],
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
