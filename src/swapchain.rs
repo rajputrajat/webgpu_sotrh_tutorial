@@ -19,19 +19,35 @@ use winit::{
     window::Window,
 };
 
+struct SpecificRender {
+    render_pipeline: RenderPipeline,
+    vertex_buffer: Option<Buffer>,
+    index_buffer: Option<Buffer>,
+    num_indices: Option<u32>,
+}
+
+struct Renders {
+    renders: Vec<SpecificRender>,
+    current_render: usize,
+}
+
+impl Renders {
+    fn next(&mut self) {
+        self.current_render += 1;
+        if self.renders.len() == self.current_render {
+            self.current_render = 0;
+        }
+    }
+}
+
 pub struct State {
     surface: Surface,
     device: Device,
     queue: Queue,
     sc_desc: SwapChainDescriptor,
     swap_chain: SwapChain,
+    render: Renders,
     pub size: PhysicalSize<u32>,
-    render_pipeline: RenderPipeline,
-    challenge_render_pipeline: RenderPipeline,
-    vertex_buffer: Buffer,
-    index_buffer: Buffer,
-    num_indices: u32,
-    use_challenge: bool,
     game_local: GameLocal,
 }
 
@@ -97,12 +113,23 @@ impl State {
             sc_desc,
             swap_chain,
             size,
-            render_pipeline,
-            challenge_render_pipeline,
-            vertex_buffer,
-            index_buffer,
-            num_indices,
-            use_challenge: false,
+            render: Renders {
+                renders: vec![
+                    SpecificRender {
+                        render_pipeline,
+                        vertex_buffer: None,
+                        index_buffer: None,
+                        num_indices: None,
+                    },
+                    SpecificRender {
+                        render_pipeline: challenge_render_pipeline,
+                        vertex_buffer: Some(vertex_buffer),
+                        index_buffer: Some(index_buffer),
+                        num_indices: Some(num_indices),
+                    },
+                ],
+                current_render: 0,
+            },
             game_local: GameLocal {
                 mouse_input: MouseInputs {
                     mouse_pointer_position: None,
@@ -239,7 +266,7 @@ impl State {
                     },
                 ..
             } => {
-                self.use_challenge ^= true;
+                self.render.next();
                 true
             }
             _ => false,
@@ -273,14 +300,17 @@ impl State {
                 }],
                 depth_stencil_attachment: None,
             });
-            if self.use_challenge {
-                render_pass.set_pipeline(&self.challenge_render_pipeline);
-            } else {
-                render_pass.set_pipeline(&self.render_pipeline);
+            let render = &self.render.renders[self.render.current_render];
+            render_pass.set_pipeline(&render.render_pipeline);
+            if let Some(vbuf) = &render.vertex_buffer {
+                render_pass.set_vertex_buffer(0, vbuf.slice(..));
             }
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            if let Some(ibuf) = &render.index_buffer {
+                render_pass.set_index_buffer(ibuf.slice(..), IndexFormat::Uint16);
+            }
+            if let Some(num_indices) = &render.num_indices {
+                render_pass.draw_indexed(0..*num_indices, 0, 0..1);
+            }
         }
         self.queue.submit(std::iter::once(encoder.finish()));
         Ok(())
