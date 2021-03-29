@@ -1,7 +1,6 @@
 use crate::buffers;
 use anyhow::Result;
 use buffers::{Vertex, INCICES, VERTICES};
-use bytemuck;
 use log::info;
 use wgpu::{
     include_spirv,

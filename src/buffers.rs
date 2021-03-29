@@ -1,4 +1,3 @@
-use bytemuck;
 use wgpu::{self, BufferAddress, InputStepMode, VertexAttribute, VertexBufferLayout};
 
 #[repr(C)]
@@ -31,23 +30,23 @@ impl Vertex {
 
 pub const VERTICES: &[Vertex] = &[
     Vertex {
-        position: [-0.0868241, 0.49240386, 0.0],
+        position: [-0.086_824_1, 0.492_403_86, 0.0],
         color: [1.0, 0.0, 0.0],
     },
     Vertex {
-        position: [-0.49513406, 0.069585847, 0.0],
+        position: [-0.495_134_06, 0.069_585_845, 0.0],
         color: [0.0, 1.0, 0.0],
     },
     Vertex {
-        position: [-0.21918549, -0.44939706, 0.0],
+        position: [-0.219_185_49, -0.449_397_06, 0.0],
         color: [0.0, 0.0, 1.0],
     },
     Vertex {
-        position: [0.35966998, -0.3473291, 0.0],
+        position: [0.359_669_98, -0.347_329_1, 0.0],
         color: [1.0, 0.0, 0.0],
     },
     Vertex {
-        position: [0.44147372, 0.2347359, 0.0],
+        position: [0.441_473_72, 0.234_735_9, 0.0],
         color: [0.0, 1.0, 0.0],
     },
 ];
