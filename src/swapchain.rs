@@ -170,7 +170,7 @@ impl State {
                 vertex: VertexState {
                     module: &vs_module,
                     entry_point: "main",
-                    buffers: &[],
+                    buffers: &[Vertex::desc()],
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
@@ -214,7 +214,7 @@ impl State {
                 vertex: VertexState {
                     module: &vs_module,
                     entry_point: "main",
-                    buffers: &[Vertex::desc()],
+                    buffers: &[],
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
