@@ -1,6 +1,6 @@
 use crate::buffers;
 use anyhow::Result;
-use buffers::{Vertex, VERTICES};
+use buffers::{Vertex, INCICES, VERTICES};
 use bytemuck;
 use log::info;
 use wgpu::{
@@ -8,9 +8,9 @@ use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     BackendBit, BlendState, Buffer, BufferUsage, Color, ColorTargetState, ColorWrite,
     CommandEncoderDescriptor, CullMode, Device, DeviceDescriptor, Features, FragmentState,
-    FrontFace, Instance, Limits, MultisampleState, Operations, PipelineLayoutDescriptor,
-    PolygonMode, PowerPreference, PrimitiveState, PrimitiveTopology, Queue,
-    RenderPassColorAttachmentDescriptor, RenderPassDescriptor, RenderPipeline,
+    FrontFace, IndexFormat, Instance, Limits, MultisampleState, Operations,
+    PipelineLayoutDescriptor, PolygonMode, PowerPreference, PrimitiveState, PrimitiveTopology,
+    Queue, RenderPassColorAttachmentDescriptor, RenderPassDescriptor, RenderPipeline,
     RenderPipelineDescriptor, RequestAdapterOptions, Surface, SwapChain, SwapChainDescriptor,
     TextureUsage, VertexState,
 };
@@ -30,7 +30,8 @@ pub struct State {
     render_pipeline: RenderPipeline,
     challenge_render_pipeline: RenderPipeline,
     vertex_buffer: Buffer,
-    num_vertices: u32,
+    index_buffer: Buffer,
+    num_indices: u32,
     use_challenge: bool,
     game_local: GameLocal,
 }
@@ -50,7 +51,7 @@ impl State {
         let size = window.inner_size();
         let instance = Instance::new(BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
-        let num_vertices = VERTICES.len() as u32;
+        let num_indices = INCICES.len() as u32;
         let adapter = instance
             .request_adapter(&RequestAdapterOptions {
                 power_preference: PowerPreference::default(),
@@ -82,8 +83,13 @@ impl State {
             State::create_render_pipeline(&device, &sc_desc);
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("vertex buffer"),
-            contents: bytemuck::cast_slice(buffers::VERTICES),
+            contents: bytemuck::cast_slice(VERTICES),
             usage: BufferUsage::VERTEX,
+        });
+        let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("index buffer"),
+            contents: bytemuck::cast_slice(INCICES),
+            usage: BufferUsage::INDEX,
         });
         Self {
             surface,
@@ -95,7 +101,8 @@ impl State {
             render_pipeline,
             challenge_render_pipeline,
             vertex_buffer,
-            num_vertices,
+            index_buffer,
+            num_indices,
             use_challenge: false,
             game_local: GameLocal {
                 mouse_input: MouseInputs {
@@ -273,7 +280,8 @@ impl State {
                 render_pass.set_pipeline(&self.render_pipeline);
             }
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.draw(0..self.num_vertices, 0..1);
+            render_pass.set_index_buffer(self.index_buffer.slice(..), IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
         self.queue.submit(std::iter::once(encoder.finish()));
         Ok(())

@@ -1,5 +1,9 @@
 # Progress
 
+## version 0.5.0
+
+* RAM usage is still same as triangle - 173 MB
+
 ## version 0.4.0
 
 * debug build with Intel 630
