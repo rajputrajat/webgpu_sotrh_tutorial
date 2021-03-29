@@ -19,11 +19,15 @@ use winit::{
     window::Window,
 };
 
+struct BufferRelatedData {
+    vertex_buffer: Buffer,
+    index_buffer: Buffer,
+    num_indices: u32,
+}
+
 struct SpecificRender {
     render_pipeline: RenderPipeline,
-    vertex_buffer: Option<Buffer>,
-    index_buffer: Option<Buffer>,
-    num_indices: Option<u32>,
+    buffer_related: Option<BufferRelatedData>,
 }
 
 struct Renders {
@@ -117,15 +121,15 @@ impl State {
                 renders: vec![
                     SpecificRender {
                         render_pipeline,
-                        vertex_buffer: None,
-                        index_buffer: None,
-                        num_indices: None,
+                        buffer_related: None,
                     },
                     SpecificRender {
                         render_pipeline: challenge_render_pipeline,
-                        vertex_buffer: Some(vertex_buffer),
-                        index_buffer: Some(index_buffer),
-                        num_indices: Some(num_indices),
+                        buffer_related: Some(BufferRelatedData {
+                            vertex_buffer,
+                            index_buffer,
+                            num_indices,
+                        }),
                     },
                 ],
                 current_render: 0,
@@ -302,14 +306,13 @@ impl State {
             });
             let render = &self.render.renders[self.render.current_render];
             render_pass.set_pipeline(&render.render_pipeline);
-            if let Some(vbuf) = &render.vertex_buffer {
-                render_pass.set_vertex_buffer(0, vbuf.slice(..));
-            }
-            if let Some(ibuf) = &render.index_buffer {
-                render_pass.set_index_buffer(ibuf.slice(..), IndexFormat::Uint16);
-            }
-            if let Some(num_indices) = &render.num_indices {
-                render_pass.draw_indexed(0..*num_indices, 0, 0..1);
+            if let Some(buf_related) = &render.buffer_related {
+                render_pass.set_vertex_buffer(0, buf_related.vertex_buffer.slice(..));
+                render_pass
+                    .set_index_buffer(buf_related.index_buffer.slice(..), IndexFormat::Uint16);
+                render_pass.draw_indexed(0..buf_related.num_indices, 0, 0..1);
+            } else {
+                render_pass.draw(0..3, 0..1);
             }
         }
         self.queue.submit(std::iter::once(encoder.finish()));
