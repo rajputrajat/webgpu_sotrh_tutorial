@@ -128,6 +128,18 @@ impl State {
         device: &Device,
         sc_desc: &SwapChainDescriptor,
     ) -> Vec<SpecificRender> {
+        let primitive = PrimitiveState {
+            topology: PrimitiveTopology::TriangleList,
+            strip_index_format: None,
+            front_face: FrontFace::Ccw,
+            cull_mode: CullMode::Back,
+            polygon_mode: PolygonMode::Fill,
+        };
+        let multisample = MultisampleState {
+            count: 1,
+            mask: !0,
+            alpha_to_coverage_enabled: false,
+        };
         let simple_specific_render;
         {
             let vs_module = device.create_shader_module(&include_spirv!("shader.vert.spv"));
@@ -157,19 +169,9 @@ impl State {
                         write_mask: ColorWrite::ALL,
                     }],
                 }),
-                primitive: PrimitiveState {
-                    topology: PrimitiveTopology::TriangleList,
-                    strip_index_format: None,
-                    front_face: FrontFace::Ccw,
-                    cull_mode: CullMode::Back,
-                    polygon_mode: PolygonMode::Fill,
-                },
+                primitive: primitive.clone(),
                 depth_stencil: None,
-                multisample: MultisampleState {
-                    count: 1,
-                    mask: !0,
-                    alpha_to_coverage_enabled: false,
-                },
+                multisample: multisample.clone(),
             });
             simple_specific_render = SpecificRender {
                 render_pipeline,
@@ -189,7 +191,7 @@ impl State {
             // create render pipeline
             let challenge_render_pipeline =
                 device.create_render_pipeline(&RenderPipelineDescriptor {
-                    label: Some("render pipeline"),
+                    label: Some("challenge render pipeline"),
                     layout: Some(&render_pipeline_layout),
                     vertex: VertexState {
                         module: &vs_module,
@@ -206,19 +208,9 @@ impl State {
                             write_mask: ColorWrite::ALL,
                         }],
                     }),
-                    primitive: PrimitiveState {
-                        topology: PrimitiveTopology::TriangleList,
-                        strip_index_format: None,
-                        front_face: FrontFace::Ccw,
-                        cull_mode: CullMode::Back,
-                        polygon_mode: PolygonMode::Fill,
-                    },
+                    primitive,
                     depth_stencil: None,
-                    multisample: MultisampleState {
-                        count: 1,
-                        mask: !0,
-                        alpha_to_coverage_enabled: false,
-                    },
+                    multisample,
                 });
             let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
                 label: Some("vertex buffer"),
