@@ -97,7 +97,7 @@ impl State {
             present_mode: wgpu::PresentMode::Fifo,
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
-        let render_pipelines = State::create_render_pipeline(&device, &sc_desc);
+        let render_pipelines = State::create_specific_render_pipelines(&device, &sc_desc);
         Self {
             surface,
             device,
@@ -106,7 +106,7 @@ impl State {
             swap_chain,
             size,
             render: Renders {
-                renders: vec![],
+                renders: render_pipelines,
                 current_render: 0,
             },
             game_local: GameLocal {
@@ -124,7 +124,7 @@ impl State {
         }
     }
 
-    fn create_render_pipeline(
+    fn create_specific_render_pipelines(
         device: &Device,
         sc_desc: &SwapChainDescriptor,
     ) -> Vec<SpecificRender> {
