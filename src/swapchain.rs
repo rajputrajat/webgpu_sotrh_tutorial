@@ -1,6 +1,6 @@
 use crate::buffers;
 use anyhow::Result;
-use buffers::{Vertex, INCICES, VERTICES};
+use buffers::{Vertex, INDICES, VERTICES};
 use log::info;
 use wgpu::{
     include_spirv,
@@ -70,7 +70,6 @@ impl State {
         let size = window.inner_size();
         let instance = Instance::new(BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
-        let num_indices = INCICES.len() as u32;
         let adapter = instance
             .request_adapter(&RequestAdapterOptions {
                 power_preference: PowerPreference::default(),
@@ -98,18 +97,7 @@ impl State {
             present_mode: wgpu::PresentMode::Fifo,
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
-        let (render_pipeline, challenge_render_pipeline) =
-            State::create_render_pipeline(&device, &sc_desc);
-        let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("vertex buffer"),
-            contents: bytemuck::cast_slice(VERTICES),
-            usage: BufferUsage::VERTEX,
-        });
-        let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("index buffer"),
-            contents: bytemuck::cast_slice(INCICES),
-            usage: BufferUsage::INDEX,
-        });
+        let render_pipelines = State::create_render_pipeline(&device, &sc_desc);
         Self {
             surface,
             device,
@@ -118,20 +106,7 @@ impl State {
             swap_chain,
             size,
             render: Renders {
-                renders: vec![
-                    SpecificRender {
-                        render_pipeline: challenge_render_pipeline,
-                        buffer_related: None,
-                    },
-                    SpecificRender {
-                        render_pipeline,
-                        buffer_related: Some(BufferRelatedData {
-                            vertex_buffer,
-                            index_buffer,
-                            num_indices,
-                        }),
-                    },
-                ],
+                renders: vec![],
                 current_render: 0,
             },
             game_local: GameLocal {
@@ -152,8 +127,8 @@ impl State {
     fn create_render_pipeline(
         device: &Device,
         sc_desc: &SwapChainDescriptor,
-    ) -> (RenderPipeline, RenderPipeline) {
-        let render_pipeline;
+    ) -> Vec<SpecificRender> {
+        let simple_specific_render;
         {
             let vs_module = device.create_shader_module(&include_spirv!("shader.vert.spv"));
             let fs_module = device.create_shader_module(&include_spirv!("shader.frag.spv"));
@@ -164,7 +139,7 @@ impl State {
                 push_constant_ranges: &[],
             });
             // create render pipeline
-            render_pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
+            let render_pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
                 label: Some("render pipeline"),
                 layout: Some(&render_pipeline_layout),
                 vertex: VertexState {
@@ -196,8 +171,12 @@ impl State {
                     alpha_to_coverage_enabled: false,
                 },
             });
+            simple_specific_render = SpecificRender {
+                render_pipeline,
+                buffer_related: None,
+            };
         }
-        let challenge_render_pipeline;
+        let challenge_specific_render;
         {
             let vs_module = device.create_shader_module(&include_spirv!("challenge.vert.spv"));
             let fs_module = device.create_shader_module(&include_spirv!("challenge.frag.spv"));
@@ -208,40 +187,60 @@ impl State {
                 push_constant_ranges: &[],
             });
             // create render pipeline
-            challenge_render_pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
-                label: Some("render pipeline"),
-                layout: Some(&render_pipeline_layout),
-                vertex: VertexState {
-                    module: &vs_module,
-                    entry_point: "main",
-                    buffers: &[],
-                },
-                fragment: Some(FragmentState {
-                    module: &fs_module,
-                    entry_point: "main",
-                    targets: &[ColorTargetState {
-                        format: sc_desc.format,
-                        alpha_blend: BlendState::REPLACE,
-                        color_blend: BlendState::REPLACE,
-                        write_mask: ColorWrite::ALL,
-                    }],
-                }),
-                primitive: PrimitiveState {
-                    topology: PrimitiveTopology::TriangleList,
-                    strip_index_format: None,
-                    front_face: FrontFace::Ccw,
-                    cull_mode: CullMode::Back,
-                    polygon_mode: PolygonMode::Fill,
-                },
-                depth_stencil: None,
-                multisample: MultisampleState {
-                    count: 1,
-                    mask: !0,
-                    alpha_to_coverage_enabled: false,
-                },
+            let challenge_render_pipeline =
+                device.create_render_pipeline(&RenderPipelineDescriptor {
+                    label: Some("render pipeline"),
+                    layout: Some(&render_pipeline_layout),
+                    vertex: VertexState {
+                        module: &vs_module,
+                        entry_point: "main",
+                        buffers: &[],
+                    },
+                    fragment: Some(FragmentState {
+                        module: &fs_module,
+                        entry_point: "main",
+                        targets: &[ColorTargetState {
+                            format: sc_desc.format,
+                            alpha_blend: BlendState::REPLACE,
+                            color_blend: BlendState::REPLACE,
+                            write_mask: ColorWrite::ALL,
+                        }],
+                    }),
+                    primitive: PrimitiveState {
+                        topology: PrimitiveTopology::TriangleList,
+                        strip_index_format: None,
+                        front_face: FrontFace::Ccw,
+                        cull_mode: CullMode::Back,
+                        polygon_mode: PolygonMode::Fill,
+                    },
+                    depth_stencil: None,
+                    multisample: MultisampleState {
+                        count: 1,
+                        mask: !0,
+                        alpha_to_coverage_enabled: false,
+                    },
+                });
+            let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
+                label: Some("vertex buffer"),
+                contents: bytemuck::cast_slice(VERTICES),
+                usage: BufferUsage::VERTEX,
             });
+            let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
+                label: Some("index buffer"),
+                contents: bytemuck::cast_slice(INDICES),
+                usage: BufferUsage::INDEX,
+            });
+            let num_indices = INDICES.len() as u32;
+            challenge_specific_render = SpecificRender {
+                render_pipeline: challenge_render_pipeline,
+                buffer_related: Some(BufferRelatedData {
+                    vertex_buffer,
+                    index_buffer,
+                    num_indices,
+                }),
+            };
         }
-        (render_pipeline, challenge_render_pipeline)
+        vec![simple_specific_render, challenge_specific_render]
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
