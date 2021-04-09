@@ -1,6 +1,6 @@
 use crate::buffers;
 use anyhow::Result;
-use buffers::{Vertex, INDICES, VERTICES};
+use buffers::Vertex;
 use log::info;
 use wgpu::{
     include_spirv,
@@ -189,42 +189,41 @@ impl State {
                 push_constant_ranges: &[],
             });
             // create render pipeline
-            let challenge_render_pipeline =
-                device.create_render_pipeline(&RenderPipelineDescriptor {
-                    label: Some("challenge render pipeline"),
-                    layout: Some(&render_pipeline_layout),
-                    vertex: VertexState {
-                        module: &vs_module,
-                        entry_point: "main",
-                        buffers: &[Vertex::desc()],
-                    },
-                    fragment: Some(FragmentState {
-                        module: &fs_module,
-                        entry_point: "main",
-                        targets: &[ColorTargetState {
-                            format: sc_desc.format,
-                            alpha_blend: BlendState::REPLACE,
-                            color_blend: BlendState::REPLACE,
-                            write_mask: ColorWrite::ALL,
-                        }],
-                    }),
-                    primitive,
-                    depth_stencil: None,
-                    multisample,
-                });
+            let render_pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
+                label: Some("challenge render pipeline"),
+                layout: Some(&render_pipeline_layout),
+                vertex: VertexState {
+                    module: &vs_module,
+                    entry_point: "main",
+                    buffers: &[Vertex::desc()],
+                },
+                fragment: Some(FragmentState {
+                    module: &fs_module,
+                    entry_point: "main",
+                    targets: &[ColorTargetState {
+                        format: sc_desc.format,
+                        alpha_blend: BlendState::REPLACE,
+                        color_blend: BlendState::REPLACE,
+                        write_mask: ColorWrite::ALL,
+                    }],
+                }),
+                primitive: primitive.clone(),
+                depth_stencil: None,
+                multisample: multisample.clone(),
+            });
             let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
                 label: Some("vertex buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
+                contents: bytemuck::cast_slice(buffers::PENTAGON_VERTICES),
                 usage: BufferUsage::VERTEX,
             });
             let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
                 label: Some("index buffer"),
-                contents: bytemuck::cast_slice(INDICES),
+                contents: bytemuck::cast_slice(buffers::PENTAGON_INDICES),
                 usage: BufferUsage::INDEX,
             });
-            let num_indices = INDICES.len() as u32;
+            let num_indices = buffers::PENTAGON_INDICES.len() as u32;
             challenge_specific_render = SpecificRender {
-                render_pipeline: challenge_render_pipeline,
+                render_pipeline,
                 buffer_related: Some(BufferRelatedData {
                     vertex_buffer,
                     index_buffer,
@@ -232,7 +231,64 @@ impl State {
                 }),
             };
         }
-        vec![simple_specific_render, challenge_specific_render]
+        let challenge2_specific_render;
+        {
+            let vs_module = device.create_shader_module(&include_spirv!("challenge.vert.spv"));
+            let fs_module = device.create_shader_module(&include_spirv!("challenge.frag.spv"));
+            // create pipeline layout
+            let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+                label: Some("render pipeline layout"),
+                bind_group_layouts: &[],
+                push_constant_ranges: &[],
+            });
+            // create render pipeline
+            let render_pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
+                label: Some("challenge 2 hexagon ender pipeline"),
+                layout: Some(&render_pipeline_layout),
+                vertex: VertexState {
+                    module: &vs_module,
+                    entry_point: "main",
+                    buffers: &[Vertex::desc()],
+                },
+                fragment: Some(FragmentState {
+                    module: &fs_module,
+                    entry_point: "main",
+                    targets: &[ColorTargetState {
+                        format: sc_desc.format,
+                        alpha_blend: BlendState::REPLACE,
+                        color_blend: BlendState::REPLACE,
+                        write_mask: ColorWrite::ALL,
+                    }],
+                }),
+                primitive,
+                depth_stencil: None,
+                multisample,
+            });
+            let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
+                label: Some("vertex buffer"),
+                contents: bytemuck::cast_slice(buffers::HEXAGON_VERTICES),
+                usage: BufferUsage::VERTEX,
+            });
+            let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
+                label: Some("index buffer"),
+                contents: bytemuck::cast_slice(buffers::HEXAGON_INDICES),
+                usage: BufferUsage::INDEX,
+            });
+            let num_indices = buffers::HEXAGON_INDICES.len() as u32;
+            challenge2_specific_render = SpecificRender {
+                render_pipeline,
+                buffer_related: Some(BufferRelatedData {
+                    vertex_buffer,
+                    index_buffer,
+                    num_indices,
+                }),
+            };
+        }
+        vec![
+            simple_specific_render,
+            challenge_specific_render,
+            challenge2_specific_render,
+        ]
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {

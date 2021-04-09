@@ -28,7 +28,7 @@ impl Vertex {
     }
 }
 
-pub const VERTICES: &[Vertex] = &[
+pub const PENTAGON_VERTICES: &[Vertex] = &[
     Vertex {
         position: [-0.086_824_1, 0.492_403_86, 0.0],
         color: [1.0, 0.0, 0.0],
@@ -51,4 +51,33 @@ pub const VERTICES: &[Vertex] = &[
     },
 ];
 
-pub const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
+pub const PENTAGON_INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
+
+pub const HEXAGON_VERTICES: &[Vertex] = &[
+    Vertex {
+        position: [0.0, 0.5, 0.0],
+        color: [1.0, 0.0, 0.0],
+    },
+    Vertex {
+        position: [-0.5, 0.25, 0.0],
+        color: [0.0, 1.0, 0.0],
+    },
+    Vertex {
+        position: [-0.5, -0.25, 0.0],
+        color: [0.0, 0.0, 1.0],
+    },
+    Vertex {
+        position: [0.0, -0.5, 0.0],
+        color: [1.0, 0.0, 0.0],
+    },
+    Vertex {
+        position: [0.5, -0.25, 0.0],
+        color: [0.0, 1.0, 0.0],
+    },
+    Vertex {
+        position: [0.5, 0.25, 0.0],
+        color: [0.0, 0.0, 1.0],
+    },
+];
+
+pub const HEXAGON_INDICES: &[u16] = &[1, 2, 3, 0, 1, 3, 0, 3, 5, 5, 3, 4];
