@@ -8,6 +8,7 @@ use winit::{
 };
 
 mod buffers;
+mod pipeline_creator;
 mod swapchain;
 
 fn main() {
