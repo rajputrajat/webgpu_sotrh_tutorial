@@ -1,10 +1,12 @@
 use crate::{buffers, swapchain};
+use image::{self, GenericImageView};
 use wgpu::{
     include_spirv,
     util::{BufferInitDescriptor, DeviceExt},
     BlendState, Buffer, BufferUsage, ColorTargetState, ColorWrite, CullMode, Device, FragmentState,
     FrontFace, MultisampleState, PipelineLayoutDescriptor, PolygonMode, PrimitiveState,
-    PrimitiveTopology, RenderPipeline, RenderPipelineDescriptor, SwapChainDescriptor, VertexState,
+    PrimitiveTopology, Queue, RenderPipeline, RenderPipelineDescriptor, SwapChainDescriptor,
+    VertexState,
 };
 
 pub(crate) struct BufferRelatedData {
@@ -184,5 +186,45 @@ impl swapchain::State {
             challenge_specific_render,
             challenge2_specific_render,
         ]
+    }
+
+    pub(crate) fn create_texture(device: &Device, queue: &Queue) {
+        let diffuse_bytes = include_bytes!("neutron.jpg");
+        let diffuse_img = image::load_from_memory(diffuse_bytes).unwrap();
+        let diffuse_rgba = diffuse_img.as_rgba8().unwrap();
+        let dimension = diffuse_img.dimensions();
+        let tex_size = wgpu::Extent3d {
+            width: dimension.0,
+            height: dimension.1,
+            depth: 1,
+        };
+        let diffuse_tex = device.create_texture(&wgpu::TextureDescriptor {
+            size: tex_size,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            mip_level_count: 1,
+            sample_count: 1,
+            usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
+            label: Some("diffuse_texture"),
+        });
+        queue.write_texture(
+            wgpu::TextureCopyView {
+                texture: &diffuse_tex,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+            },
+            diffuse_rgba,
+            wgpu::TextureDataLayout {
+                offset: 0,
+                bytes_per_row: 4 * dimension.0,
+                rows_per_image: dimension.1,
+            },
+            tex_size,
+        );
+        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("temp buffer for texture"),
+            contents: &diffuse_rgba,
+            usage: wgpu::BufferUsage::COPY_DST,
+        });
     }
 }

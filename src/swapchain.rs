@@ -49,7 +49,7 @@ struct MouseInputs {
 }
 
 impl State {
-    pub async fn new(window: &Window) -> Self {
+    pub(crate) async fn new(window: &Window) -> Self {
         let size = window.inner_size();
         let instance = Instance::new(BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
