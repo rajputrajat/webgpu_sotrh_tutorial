@@ -1,12 +1,12 @@
 use crate::{buffers, swapchain};
 use image::{self, GenericImageView};
+use std::num::NonZeroU32;
 use wgpu::{
     include_spirv,
     util::{BufferInitDescriptor, DeviceExt},
-    BlendState, Buffer, BufferUsage, ColorTargetState, ColorWrite, CullMode, Device, FragmentState,
-    FrontFace, MultisampleState, PipelineLayoutDescriptor, PolygonMode, PrimitiveState,
-    PrimitiveTopology, Queue, RenderPipeline, RenderPipelineDescriptor, SwapChainDescriptor,
-    VertexState,
+    Buffer, BufferUsage, ColorTargetState, ColorWrite, Device, Face, FragmentState, FrontFace,
+    MultisampleState, PipelineLayoutDescriptor, PolygonMode, PrimitiveState, PrimitiveTopology,
+    Queue, RenderPipeline, RenderPipelineDescriptor, SwapChainDescriptor, VertexState,
 };
 
 pub(crate) struct BufferRelatedData {
@@ -29,8 +29,10 @@ impl swapchain::State {
             topology: PrimitiveTopology::TriangleList,
             strip_index_format: None,
             front_face: FrontFace::Ccw,
-            cull_mode: CullMode::Back,
+            cull_mode: Some(Face::Back),
             polygon_mode: PolygonMode::Fill,
+            clamp_depth: false,
+            conservative: false,
         };
         let multisample = MultisampleState {
             count: 1,
@@ -61,14 +63,13 @@ impl swapchain::State {
                     entry_point: "main",
                     targets: &[ColorTargetState {
                         format: sc_desc.format,
-                        alpha_blend: BlendState::REPLACE,
-                        color_blend: BlendState::REPLACE,
+                        blend: None,
                         write_mask: ColorWrite::ALL,
                     }],
                 }),
-                primitive: primitive.clone(),
+                primitive: primitive,
                 depth_stencil: None,
-                multisample: multisample.clone(),
+                multisample: multisample,
             });
             simple_specific_render = SpecificRender {
                 render_pipeline,
@@ -99,8 +100,7 @@ impl swapchain::State {
                     entry_point: "main",
                     targets: &[ColorTargetState {
                         format: sc_desc.format,
-                        alpha_blend: BlendState::REPLACE,
-                        color_blend: BlendState::REPLACE,
+                        blend: None,
                         write_mask: ColorWrite::ALL,
                     }],
                 }),
@@ -152,8 +152,7 @@ impl swapchain::State {
                     entry_point: "main",
                     targets: &[ColorTargetState {
                         format: sc_desc.format,
-                        alpha_blend: BlendState::REPLACE,
-                        color_blend: BlendState::REPLACE,
+                        blend: None,
                         write_mask: ColorWrite::ALL,
                     }],
                 }),
@@ -196,7 +195,7 @@ impl swapchain::State {
         let tex_size = wgpu::Extent3d {
             width: dimension.0,
             height: dimension.1,
-            depth: 1,
+            depth_or_array_layers: 1,
         };
         let diffuse_tex = device.create_texture(&wgpu::TextureDescriptor {
             size: tex_size,
@@ -208,16 +207,16 @@ impl swapchain::State {
             label: Some("diffuse_texture"),
         });
         queue.write_texture(
-            wgpu::TextureCopyView {
+            wgpu::ImageCopyTexture {
                 texture: &diffuse_tex,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
             },
             diffuse_rgba,
-            wgpu::TextureDataLayout {
+            wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: 4 * dimension.0,
-                rows_per_image: dimension.1,
+                bytes_per_row: NonZeroU32::new(4 * dimension.0),
+                rows_per_image: NonZeroU32::new(dimension.1),
             },
             tex_size,
         );

@@ -3,7 +3,7 @@ use anyhow::Result;
 use log::info;
 use wgpu::{
     BackendBit, Color, CommandEncoderDescriptor, Device, DeviceDescriptor, Features, IndexFormat,
-    Instance, Limits, Operations, PowerPreference, Queue, RenderPassColorAttachmentDescriptor,
+    Instance, Limits, Operations, PowerPreference, Queue, RenderPassColorAttachment,
     RenderPassDescriptor, RequestAdapterOptions, Surface, SwapChain, SwapChainDescriptor,
     TextureUsage,
 };
@@ -74,7 +74,7 @@ impl State {
             .unwrap();
         let sc_desc = SwapChainDescriptor {
             usage: TextureUsage::RENDER_ATTACHMENT,
-            format: adapter.get_swap_chain_preferred_format(&&surface),
+            format: adapter.get_swap_chain_preferred_format(&&surface).unwrap(),
             width: size.width,
             height: size.height,
             present_mode: wgpu::PresentMode::Fifo,
@@ -157,8 +157,8 @@ impl State {
         {
             let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: Some("Render pass"),
-                color_attachments: &[RenderPassColorAttachmentDescriptor {
-                    attachment: &frame.view,
+                color_attachments: &[RenderPassColorAttachment {
+                    view: &frame.view,
                     resolve_target: None,
                     ops: Operations {
                         load: wgpu::LoadOp::Clear(self.game_local.color),
